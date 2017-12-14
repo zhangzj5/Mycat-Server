@@ -6,6 +6,7 @@ import java.sql.Types;
 import java.util.List;
 
 
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,15 +270,23 @@ public class MongoSQLParser {
         return buffer.toString();   
     }  
 	private Object getExpValue(SQLExpr expr){
+		if (expr instanceof SQLMethodInvokeExpr ){
+			SQLMethodInvokeExpr m=(SQLMethodInvokeExpr)expr;
+			if (m.getMethodName().equalsIgnoreCase("ObjectId")){
+				return ObjectId.massageToObjectId(((SQLCharExpr)m.getParameters().get(0)).getText());
+			}
+		}
 		if (expr instanceof SQLIntegerExpr){
+
 			return ((SQLIntegerExpr)expr).getNumber().intValue();
 		}
 		if (expr instanceof SQLNumberExpr){
 			return ((SQLNumberExpr)expr).getNumber().doubleValue();
 		}		
 		if (expr instanceof SQLCharExpr){
-			String va=((SQLCharExpr)expr).toString();
-			return remove(va,'\'');
+			return ((SQLCharExpr)expr).getText();
+//			String va=((SQLCharExpr)expr).toString();
+//			return remove(va,'\'');
 		}
 		if (expr instanceof SQLBooleanExpr){			
 			return ((SQLBooleanExpr)expr).getValue();
