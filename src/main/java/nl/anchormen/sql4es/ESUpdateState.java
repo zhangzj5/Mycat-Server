@@ -460,7 +460,7 @@ public class ESUpdateState {
 	 * @throws SQLException
 	 */
 	public int execute(String sql, CreateTable create, String index) throws SQLException {
-		
+		//TODO zhangzj 此处需要修改，转换为JSON数据时不正确；
 		String[] indexAndType = this.getIndexAndType(create.getName().toString(), sql, "table\\s+", "\\s+\\(", index);
 		index = indexAndType[0];
 		String type = indexAndType[1];
@@ -472,23 +472,23 @@ public class ESUpdateState {
 		if(create.getProperties().size() >= 0){
 			Map<String, Expression> props = create.getProperties();
 			if(props.containsKey("dynamic_templates")){ 
-				sb.append("dynamic_templates:"+removeEnclosingQuotes( props.get("dynamic_templates").toString()));
+				sb.append("\"dynamic_templates\":\""+removeEnclosingQuotes( props.get("dynamic_templates").toString())+"\"");
 				templatesAdded = true;
 			}
 			// add other 'index global' stuff
 		}
 		if(templatesAdded) sb.append(", ");
-		sb.append("properties:{");
+		sb.append("\"properties\":{");
 		List<TableElement> fields = create.getElements();
 		for(int i=0; i<fields.size(); i++){
 			TableElement field = fields.get(i);
 			if(field.getName().equals("_id") || field.getName().equals("_type")) continue; // skip protected fields
-			sb.append(field.getName()+":{"+field.getType()+"}");
+			sb.append("\""+field.getName()+"\":{"+field.getType().replaceAll("'", "\"")+"}");
 			if(i<fields.size()-1) sb.append(", ");
 		}
 		sb.append("}}"); // close type and properties blocks
-		String json = sb.toString().replaceAll("([\\[|{|,|:]\\s)*(\\w+|\\*)(\\s*[\\]|}|:|,])", "$1\"$2\"$3");
-		
+		//String json = sb.toString().replaceAll("([\\[|{|,|:]\\s)*(\\w+|\\*)(\\s*[\\]|}|:|,])", "$1\"$2\"$3");
+		String json = sb.toString();
 		// create index if it does not yet exist
 		boolean indexExists = client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 		if(!indexExists){
